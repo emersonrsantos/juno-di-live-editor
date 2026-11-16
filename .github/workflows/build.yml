@@ -1,0 +1,80 @@
+name: Build desktop apps
+
+# Packages the Electron app for Windows and macOS and uploads the files as workflow artifacts.
+# Runs on PRs that touch packaging, on demand, and from release.yml (which publishes the result).
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref to build
+        type: string
+        default: ''
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - package.json
+      - package-lock.json
+      - electron/**
+      - scripts/**
+      - .github/workflows/build.yml
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Package (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+            script: dist:win
+          - name: macos
+            # Apple Silicon runner; electron-builder also produces the Intel (x64) build here.
+            os: macos-latest
+            script: dist:mac
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Build ${{ matrix.name }} app
+        # Unsigned builds; macOS gets an ad-hoc signature from scripts/adhoc-sign.cjs.
+        # Publishing to GitHub is done by release.yml, never by electron-builder.
+        run: npm run ${{ matrix.script }} -- --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Package web build
+        if: matrix.name == 'windows'
+        working-directory: dist
+        run: |
+          version=$(node -p "require('../package.json').version")
+          7z a "../release/JUNO-Di-Editor-$version-web.zip" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.name }}
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            release/*.exe
+            release/*.dmg
+            release/*.zip

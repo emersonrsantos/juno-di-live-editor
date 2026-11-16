@@ -63,9 +63,12 @@ function createWindow() {
 }
 
 function buildMenu() {
+  const mac = process.platform === 'darwin';
   Menu.setApplicationMenu(
     Menu.buildFromTemplate([
-      { label: 'File', submenu: [{ role: 'quit' }] },
+      // macOS: the first menu is the app menu, and Cmd+C/V/A only work in text fields
+      // (patch names) when an Edit menu provides them.
+      ...(mac ? [{ role: 'appMenu' }, { role: 'editMenu' }] : [{ label: 'File', submenu: [{ role: 'quit' }] }]),
       {
         label: 'View',
         submenu: [{ role: 'reload' }, { role: 'toggleDevTools' }, { type: 'separator' }, { role: 'togglefullscreen' }],
