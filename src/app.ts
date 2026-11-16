@@ -46,7 +46,11 @@ export class App implements Env {
     // a (re)connected synth may hold different user names: fetch them again
     this.midi.onPortChange = () => {
       this.names.invalidate();
-      if (this.midi.output) this.status(`Connected to ${this.midi.output.name}.`);
+      this.status(
+        this.midi.output
+          ? `Connected to ${this.midi.output.name}.`
+          : 'JUNO-Di disconnected. It will reconnect automatically when it is switched on or plugged in.',
+      );
       this.invalidate();
     };
     this.midi.onDirty = () => {
