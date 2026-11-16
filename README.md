@@ -11,6 +11,20 @@ npm test
 npm run build    # static site in dist/
 ```
 
+## Desktop app (Electron)
+
+```bash
+npm run desktop     # build and run in an Electron window
+npm run dist:win    # release/: "JUNO-Di Editor Setup x.y.z.exe" (installer) and a portable .exe
+```
+
+`electron/main.cjs` serves `dist/` (which includes the original `Script/` assets) through a
+private `app://` protocol and grants Web MIDI + SysEx without a permission prompt. Builds are
+unsigned, so Windows SmartScreen may warn on first launch.
+
+Note: npm's install-script allowlist must permit `electron` (see `allowScripts` in
+package.json) so its postinstall can download the Electron runtime.
+
 ## Layout
 
 | Path | Purpose |
@@ -21,6 +35,7 @@ npm run build    # static site in dist/
 | `src/model/jxe.ts` | `.jxe` (KoaDataFile) read/write, byte-compatible with JUXE.exe |
 | `src/ui/` | Bitmap skins, text writers, panel builder, controls, canvas windows |
 | `src/midi/` | Roland DT1/RQ1 encoding, Web MIDI link, Read/Sync |
+| `electron/main.cjs` | Desktop shell: app:// protocol, MIDI/SysEx permission, menu |
 | `src/app.ts` | Editor behaviour not in the script (mode/part state, functions, files) |
 
 ## Status against a real JUNO-Di
