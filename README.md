@@ -16,6 +16,20 @@ npm run build    # static site in dist/
 ```bash
 npm run desktop     # build and run in an Electron window
 npm run dist:win    # release/: "JUNO-Di Editor Setup x.y.z.exe" (installer) and a portable .exe
+npm run dist:mac    # release/: .dmg and .zip for Apple Silicon (arm64) and Intel (x64); run on a Mac
+```
+
+macOS builds are ad-hoc signed (`scripts/adhoc-sign.cjs`) but not notarized: on first launch,
+open the app, then allow it under System Settings → Privacy & Security → "Open Anyway".
+
+## Releases
+
+GitHub Actions (`.github/workflows/`): `ci.yml` builds and tests every push and PR;
+`build.yml` packages the Windows and macOS apps; `release.yml` runs when a `v*` tag matching
+`package.json`'s version is pushed and attaches all packages and a web zip to a GitHub Release:
+
+```bash
+npm version 0.2.0 && git push --follow-tags
 ```
 
 `electron/main.cjs` serves `dist/` (which includes the original `Script/` assets) through a
