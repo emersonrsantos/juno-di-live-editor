@@ -1,5 +1,7 @@
 import './style.css';
-import { fetchScript } from './script/load';
+import { fetchScript, mergeScripts, parseScript } from './script/load';
+// JUNO-Di internal wave names in Script.xml's <stringTable> format (bundled, no MIDI needed)
+import waveNameTable from './data/JunoDiWaveNameTable.xml?raw';
 import { App } from './app';
 
 const ASSETS = './JUXE/';
@@ -9,7 +11,10 @@ async function boot() {
   const loading = $('loading');
   try {
     loading.textContent = 'Loading Script.xml…';
-    const script = await fetchScript(`${ASSETS}Script.xml`);
+    const script = mergeScripts(
+      await fetchScript(`${ASSETS}Script.xml`),
+      parseScript(waveNameTable, new DOMParser()),
+    );
     const app = new App(script, ASSETS);
     (window as unknown as { app: App }).app = app;
     await app.start((s) => (loading.textContent = s));

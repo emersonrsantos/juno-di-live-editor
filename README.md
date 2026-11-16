@@ -36,7 +36,7 @@ package.json) so its postinstall can download the Electron runtime.
 | `src/ui/` | Bitmap skins, text writers, panel builder, controls, canvas windows |
 | `src/midi/` | Roland DT1/RQ1 encoding, Web MIDI link, Read/Sync |
 | `electron/main.cjs` | Desktop shell: app:// protocol, MIDI/SysEx permission, menu |
-| `src/data/` | Name tables (banks, GM2/MFX names) and the wave-name cache |
+| `src/data/` | Name tables (banks, GM2/MFX names) and the bundled wave name table |
 | `src/app.ts` | Editor behaviour not in the script (mode/part state, functions, files) |
 
 ## Status against a real JUNO-Di
@@ -73,12 +73,13 @@ one DT1 per entry and ends with an all-zero entry:
 
 GM2 banks are not served by the synth and use names built into the editor.
 
-**Wave names** (WG section): RQ1 `0F 00 01 02` (`waveANameInformation2`) with size =
-`[first wave as 3 nibbles, count]` returns DT1 `[wave number as 4 nibbles, name×12]`; past the last
-wave (850) the synth returns numbered entries with blank names. `src/data/waves.ts` fetches them in
-blocks of 32: blocks for waves on screen immediately, and all others in the background from the moment
-the synth connects (~20 s at the synth's ≈50 names/s), so a wave dropdown is normally complete when
-opened; an open dropdown updates live while names arrive.
+**Wave names** (WG section) are bundled: `src/data/JunoDiWaveNameTable.xml` holds the 850
+internal waveform names as a `<stringTable>` (`internalWaveNameTable`, entry 1 = wave 0001) in the
+same format as Script.xml's SRX tables (`srx01WaveNameTable` ...). JUXE.exe asks the synth for these at
+run time; they are fixed in ROM, so they were read once from a JUNO-Di with RQ1 `0F 00 01 02`
+(`waveANameInformation2`, size = `[first wave as 3 nibbles, count]`, reply `[number as 4 nibbles,
+name×12]`) and the editor no longer queries them. The table is merged into Script.xml's definitions
+at startup (`mergeScripts`).
 
 **Live Sync** (toolbar, on by default, remembered): every edit is sent as you make it and
 the Sync button is disabled. Off: edits stay in the editor, the status bar counts unsent blocks, and

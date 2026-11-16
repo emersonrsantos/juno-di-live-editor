@@ -18,3 +18,11 @@ export async function fetchScript(url: string): Promise<XNode> {
   if (!res.ok) throw new Error(`Failed to load ${url}: ${res.status}`);
   return parseScript(decodeScript(await res.arrayBuffer()), new DOMParser());
 }
+
+/**
+ * Append the definitions of an extra script (same <script> format as Script.xml, e.g. the
+ * bundled JUNO-Di wave name table) to the main script, so they are found like built-ins.
+ */
+export function mergeScripts(base: XNode, ...extras: XNode[]): XNode {
+  return { ...base, children: [...base.children, ...extras.flatMap((e) => e.children)] };
+}

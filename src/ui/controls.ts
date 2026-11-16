@@ -17,8 +17,7 @@ export interface Env {
   invalidate(): void;
   callFunction(name: string, ctl: Control): void;
   functionEnabled(name: string): boolean;
-  /** `refresh` rebuilds the items while the menu is open (labels that load asynchronously). */
-  openMenu(ctl: Control, items: MenuItem[], onPick: (value: number) => void, refresh?: () => MenuItem[]): void;
+  openMenu(ctl: Control, items: MenuItem[], onPick: (value: number) => void): void;
   openEdit(ctl: Control, rect: Rect, value: string, maxLen: number, onDone: (v: string) => void): void;
   status(text: string): void;
   note(on: boolean, note: number): void;
@@ -585,7 +584,7 @@ class Combo extends Control {
     if (!v) return;
     this.pressed = true;
     this.env.invalidate();
-    this.env.openMenu(this, this.items(v), (x) => this.pick(x), () => this.items(v));
+    this.env.openMenu(this, this.items(v), (x) => this.pick(x));
   }
   pick(x: number) {
     this.setVal(x);
@@ -618,23 +617,28 @@ class MfxSelectCombo extends Combo {
   }
 }
 
+/**
+ * Wave number combo (WG). Names come from a <stringTable> like Script.xml's
+ * srxNNWaveNameTable, entry 1 = wave 0001: the bundled internalWaveNameTable for the
+ * JUNO-Di's own waves (src/data/JunoDiWaveNameTable.xml).
+ */
 class WaveSelectCombo extends Combo {
-  private label(x: number, name: string | undefined) {
-    return x === 0 ? '---- : OFF' : `${String(x).padStart(4, '0')}: ${name ?? ''}`;
+  static readonly TABLE = 'internalWaveNameTable';
+  private table() {
+    return this.env.text.strings.get(WaveSelectCombo.TABLE) ?? [];
+  }
+  private label(x: number) {
+    return x === 0 ? '---- : OFF' : `${String(x).padStart(4, '0')}: ${this.table()[x - 1] ?? ''}`;
   }
   text() {
     const v = this.ref();
-    if (!v) return '';
-    const x = this.m.get(v);
-    return this.label(x, this.env.names.waves.get(x));
+    return v ? this.label(this.m.get(v)) : '';
   }
   items(v: ValueNode): MenuItem[] {
-    const waves = this.env.names.waves;
-    void waves.prefetch(); // normally already running since connect; names fill in live
     const cur = this.m.get(v);
-    const out: MenuItem[] = [{ label: this.label(0, undefined), value: 0, selected: cur === 0 }];
-    for (let x = 1; x <= Math.min(v.max, waves.count); x++)
-      out.push({ label: this.label(x, waves.peek(x)), value: x, selected: x === cur });
+    const last = Math.min(v.max, this.table().length);
+    const out: MenuItem[] = [];
+    for (let x = 0; x <= last; x++) out.push({ label: this.label(x), value: x, selected: x === cur });
     return out;
   }
 }

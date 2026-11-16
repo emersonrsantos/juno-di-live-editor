@@ -1,5 +1,4 @@
 import { GM2_PATCH_NAMES, GM2_RHYTHM_NAMES, MFX_TYPES } from './gm2';
-import { WaveNames } from './waves';
 
 export interface ListEntry {
   label: string;
@@ -60,8 +59,6 @@ const PERFORMANCE_BANKS: Bank[] = [
 
 export class NameTables {
   readonly mfx = MFX_TYPES;
-  /** Wave names, fetched from the synth in blocks (see waves.ts). */
-  readonly waves = new WaveNames();
   readonly patchBanks = PATCH_BANKS.map((b) => b.label);
   readonly performanceBanks = PERFORMANCE_BANKS.map((b) => b.label);
   /** Names received from the device keyed by "msb:lsb:pc". */
@@ -77,7 +74,6 @@ export class NameTables {
 
   /** Forget fetched names so they are requested again (e.g. after connecting a synth). */
   invalidate(msb?: number, lsb?: number) {
-    if (msb === undefined) this.waves.reset();
     for (const k of [...this.requested]) if (msb === undefined || k === `${msb}:${lsb}`) this.requested.delete(k);
   }
 

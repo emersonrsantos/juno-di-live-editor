@@ -181,9 +181,6 @@ export class MidiLink {
    * cm.command queries are RQ1s whose 4-byte size field carries the argument; the synth
    * answers with a stream of DT1s at the same address, ended by an all-zero entry.
    */
-  /** Whether the last query() ended with the synth's all-zero end marker (vs. a timeout). */
-  lastQueryEnded = false;
-
   async query(address: number, arg: number[], timeoutMs = 1500): Promise<number[][]> {
     if (!this.output) throw new Error('No MIDI output selected');
     const out: number[][] = [];
@@ -208,7 +205,6 @@ export class MidiLink {
       }
     } finally {
       this.taps.delete(tap);
-      this.lastQueryEnded = ended;
     }
     return out;
   }
