@@ -8,7 +8,7 @@ import { readJxe, writeJxe } from '../src/model/jxe';
 import { compileExpr, compileValueRef } from '../src/model/expr';
 import type { XNode } from '../src/script/xnode';
 
-const ASSETS = resolve(__dirname, '../../Script/JUXE');
+const ASSETS = resolve(__dirname, '../public/JUXE');
 let script: XNode;
 let model: Model;
 

@@ -2,7 +2,8 @@ import { defineConfig, Plugin } from 'vite';
 import { resolve } from 'node:path';
 import { readdirSync } from 'node:fs';
 
-const SCRIPT_DIR = resolve(__dirname, '../Script');
+// Runtime assets from the original editor (Script.xml, skins, InitialData.jxe), unchanged.
+const ASSET_DIR = resolve(__dirname, 'public');
 
 // Exposes the list of bitmap files so names from Script.xml can be matched
 // case-insensitively (the original ran on Windows, where file names are not case sensitive).
@@ -13,17 +14,17 @@ function assetIndex(): Plugin {
     resolveId: (s) => (s === id ? '\0' + id : undefined),
     load(s) {
       if (s !== '\0' + id) return;
-      const files = readdirSync(resolve(SCRIPT_DIR, 'JUXE')).filter((f) => /\.bmp$/i.test(f));
+      const files = readdirSync(resolve(ASSET_DIR, 'JUXE')).filter((f) => /\.bmp$/i.test(f));
       return `export default ${JSON.stringify(files)};`;
     },
   };
 }
 
-// The original editor's assets (Script.xml, bitmaps, InitialData.jxe) are served
-// unchanged from ../Script so the clone stays a drop-in replacement for JUXE.exe.
+// public/JUXE holds the original editor's assets (Script.xml, bitmaps, InitialData.jxe),
+// served unchanged so the clone stays driven by the same script as JUXE.exe.
 export default defineConfig({
   base: './',
-  publicDir: SCRIPT_DIR,
+  publicDir: ASSET_DIR,
   plugins: [assetIndex()],
   server: { port: 5173 },
 });

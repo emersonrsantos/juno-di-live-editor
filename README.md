@@ -1,7 +1,7 @@
 # JUNO-Di Editor (web)
 
 A TypeScript/Web MIDI re-implementation of Roland's `JUXE.exe` editor. Like the original, it is
-an engine driven by `../Script/JUXE/Script.xml`: the parameter map, panels, controls and skins
+an engine driven by `public/JUXE/Script.xml`: the parameter map, panels, controls and skins
 all come from that file and the BMPs next to it, which are served unchanged.
 
 ```bash
@@ -25,10 +25,18 @@ unsigned, so Windows SmartScreen may warn on first launch.
 Note: npm's install-script allowlist must permit `electron` (see `allowScripts` in
 package.json) so its postinstall can download the Electron runtime.
 
+## Assets
+
+`public/JUXE/` contains the files the editor loads at runtime, copied unchanged from Roland's
+JUNO-Di Editor: `Script.xml` (parameter map and panel layout), the panel bitmaps and
+`InitialData.jxe` (default data). They are © Roland Corporation. The original programs
+(`JUXE.exe`, `JUXL.exe`) and manuals are not part of this repository and are not needed.
+
 ## Layout
 
 | Path | Purpose |
 | --- | --- |
+| `public/JUXE/` | Original runtime assets (Script.xml, bitmaps, InitialData.jxe) |
 | `src/script/` | XML loading (Shift_JIS) and `$var` template substitution |
 | `src/model/model.ts` | Struct/value tree over 7-bit addressed byte blocks |
 | `src/model/expr.ts` | RPN expressions and value references (`fm.pat[vs.control.partId].…`) |

@@ -10,7 +10,7 @@ const file = (p: string) => readFileSync(resolve(__dirname, p));
 
 describe('bundled JUNO-Di wave name table', () => {
   const table = parseScript(file('../src/data/JunoDiWaveNameTable.xml').toString('utf8'), parser);
-  const buf = file('../../Script/JUXE/Script.xml');
+  const buf = file('../public/JUXE/Script.xml');
   const script = parseScript(decodeScript(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)), parser);
   const text = new TextLibrary(mergeScripts(script, table));
   const waves = text.strings.get('internalWaveNameTable')!;
