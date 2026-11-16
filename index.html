@@ -16,6 +16,7 @@
       <button id="btn-midi" title="Request MIDI access (SysEx)">Connect MIDI</button>
       <label>In <select id="midi-in"></select></label>
       <label>Out <select id="midi-out"></select></label>
+      <label class="toggle" title="On: every edit is sent to the JUNO-Di immediately and the Sync button is disabled. Off: edits stay in the editor until you press Sync."><input id="realtime" type="checkbox" checked /> Sync in real time</label>
       <label>Device ID <select id="device-id"></select></label>
       <label title="Forward notes/controllers from MIDI In to MIDI Out"><input id="midi-thru" type="checkbox" /> Thru</label>
       <span id="midi-state" class="pill">off</span>

@@ -38,3 +38,5 @@ body { display: flex; flex-direction: column; }
 .jx-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .jx-actions button { background: #33363d; color: var(--fg); border: 1px solid #4a4e57; border-radius: 3px; padding: 4px 14px; font: inherit; cursor: pointer; }
 .jx-actions button.primary { background: #a33; border-color: #c55; color: #fff; }
+#toolbar label.toggle { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border: 1px solid #4a4e57; border-radius: 3px; background: #2b2e34; cursor: pointer; white-space: nowrap; }
+#toolbar label.toggle:has(input:checked) { border-color: var(--accent); color: #fff; }

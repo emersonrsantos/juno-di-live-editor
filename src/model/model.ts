@@ -86,7 +86,11 @@ export class StructNode {
 
 export type Node = StructNode | ValueNode;
 
-type Source = 'ui' | 'midi' | 'file' | 'init' | 'internal';
+/**
+ * ui        - user edit; sent to the synth when real-time sync is on
+ * immediate - editor command that must reach the synth now (mode switch, sound selection)
+ */
+export type Source = 'ui' | 'immediate' | 'midi' | 'file' | 'init' | 'internal';
 export type ChangeListener = (block: Block, offset: number, length: number, source: Source) => void;
 
 interface StructTypeDef {

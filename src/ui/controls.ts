@@ -16,6 +16,7 @@ export interface Env {
   names: NameTables;
   invalidate(): void;
   callFunction(name: string, ctl: Control): void;
+  functionEnabled(name: string): boolean;
   openMenu(ctl: Control, items: MenuItem[], onPick: (value: number) => void): void;
   openEdit(ctl: Control, rect: Rect, value: string, maxLen: number, onDone: (v: string) => void): void;
   status(text: string): void;
@@ -423,6 +424,10 @@ class LatchButton extends ButtonBase {
 class UnlatchButton extends ButtonBase {
   isOn() {
     return false;
+  }
+  enabled() {
+    const f = this.t('function');
+    return !f || this.env.functionEnabled(f);
   }
   click() {
     const f = this.t('function');

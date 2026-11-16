@@ -43,6 +43,11 @@ export class App implements Env {
     const roots = childrenOf(out, 'rootStruct').map((r) => r.text);
     this.midi = new MidiLink(this.model, modelId, roots);
     this.names.onUpdate = () => this.invalidate();
+    this.midi.onDirty = () => {
+      const n = this.midi.dirty.size;
+      if (n && !this.midi.realtime) this.status(`${n} edited block${n > 1 ? 's' : ''} not sent yet — press Sync to send to the JUNO-Di.`);
+      this.invalidate();
+    };
     this.names.onNeed = (bank) => this.fetchNames(bank);
     this.model.onChange((b, off, _l, src) => {
       if (src === 'ui' && b.root === 'fm') this.onTypeChange(b.path, off);
@@ -188,7 +193,24 @@ export class App implements Env {
     return { x: cr.left + r.x * this.zoom, y: cr.top + r.y * this.zoom, w: r.w * this.zoom, h: r.h * this.zoom };
   }
 
+  /** Sync is only needed (and only enabled) when real-time sync is off. */
+  functionEnabled(name: string) {
+    return name !== 'Sync' || !this.midi.realtime;
+  }
+
+  async setRealtime(on: boolean) {
+    this.midi.setRealtime(on);
+    this.invalidate();
+    if (on && this.midi.dirty.size && this.midi.output) {
+      // catch the synth up with edits made while real-time sync was off
+      const blocks = [...this.midi.dirty];
+      await this.midi.exclusive(() => this.midi.sync(blocks, () => this.status('Sending pending edits…')));
+      this.status('Real-time sync on. Pending edits sent.');
+    } else this.status(on ? 'Real-time sync on: edits are sent as you make them.' : 'Real-time sync off: press Sync to send edits.');
+  }
+
   callFunction(name: string, ctl: Control) {
+    if (!this.functionEnabled(name)) return;
     switch (name) {
       case 'Read':
         return void this.readFromDevice();
@@ -246,7 +268,7 @@ export class App implements Env {
       this.lastMode = mode;
       if (prev !== undefined && !this.followingSynth) {
         const sm = this.v('fm.setup.soundMode');
-        if (sm) this.model.set(sm, mode === 1 ? 0 : 1, 'ui');
+        if (sm) this.model.set(sm, mode === 1 ? 0 : 1, 'immediate');
       }
     }
     this.invalidate();
@@ -453,7 +475,7 @@ export class App implements Env {
     }
     const setUi = (p: string, x: number) => {
       const v = this.v(p);
-      if (v) this.model.set(v, x, 'ui');
+      if (v) this.model.set(v, x, 'immediate');
     };
     let base: string;
     if (isPerf) base = 'fm.setup.performance';

@@ -94,12 +94,15 @@ export class Window {
       else {
         it.ax = x + it.x;
         it.ay = y + it.y;
+        const enabled = it.enabled();
+        if (!enabled) this.ctx.globalAlpha = 0.35; // disabled controls are dimmed and inert
         try {
           it.draw(this.ctx, it.ax, it.ay);
         } catch (e) {
           console.warn('draw failed', it.type, it.name, e);
         }
-        if (it.interactive()) this.hits.push(it);
+        this.ctx.globalAlpha = 1;
+        if (enabled && it.interactive()) this.hits.push(it);
       }
     }
   }

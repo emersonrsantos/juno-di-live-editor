@@ -40,6 +40,9 @@ function bindToolbar(app: App) {
   const outSel = $<HTMLSelectElement>('midi-out');
   const dev = $<HTMLSelectElement>('device-id');
   const thru = $<HTMLInputElement>('midi-thru');
+  const realtime = $<HTMLInputElement>('realtime');
+  realtime.checked = app.midi.realtime;
+  realtime.onchange = () => app.setRealtime(realtime.checked);
   // Roland displays device IDs 17-32 for SysEx bytes 0x10-0x1F (17 is the factory default)
   for (let i = 0x10; i <= 0x1f; i++) dev.add(new Option(String(i + 1), String(i)));
 
@@ -55,6 +58,7 @@ function bindToolbar(app: App) {
     fill(outSel, a ? [...a.outputs.values()] : [], app.midi.output);
     dev.value = String(app.midi.deviceId);
     thru.checked = app.midi.through;
+    realtime.checked = app.midi.realtime;
     $('midi-state').textContent = a ? (app.midi.output ? 'connected' : 'no output') : 'off';
   };
   app.midi.onState = refresh;

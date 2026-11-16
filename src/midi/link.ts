@@ -12,6 +12,11 @@ export class MidiLink {
   output?: MIDIOutput;
   deviceId = 0x10;
   through = false;
+  /** Send each edit as it happens (default). When off, edits wait for Sync. */
+  realtime = true;
+  /** Blocks edited while real-time sync was off and not yet sent. */
+  readonly dirty = new Set<Block>();
+  onDirty: () => void = () => {};
   private pending = new Map<number, { address: number; data: number[] }>();
   private flushScheduled = false;
   private lastRx = 0;
@@ -27,8 +32,17 @@ export class MidiLink {
     readonly modelId: number[],
     private roots: string[],
   ) {
+    try {
+      this.realtime = JSON.parse(localStorage.getItem(STORE) ?? '{}').realtime ?? true;
+    } catch {}
     model.onChange((b, off, len, src) => {
-      if (src !== 'ui' || !this.roots.includes(b.root)) return;
+      if ((src !== 'ui' && src !== 'immediate') || !this.roots.includes(b.root)) return;
+      // commands (cm) and explicit editor actions always go out; edits only in real time
+      if (src === 'ui' && !this.realtime && b.root !== 'cm') {
+        this.dirty.add(b);
+        this.onDirty();
+        return;
+      }
       // coalesce rapid edits of the same address into one message per frame
       const address = b.address + off;
       this.pending.set(address, { address, data: Array.from(b.data.subarray(off, off + len)) });
@@ -44,12 +58,13 @@ export class MidiLink {
     if (!this.supported) throw new Error('Web MIDI is not available in this browser (use Chrome or Edge).');
     this.access = await navigator.requestMIDIAccess({ sysex: true });
     this.access.onstatechange = () => this.onState();
-    let saved: { in?: string; out?: string; dev?: number; through?: boolean } = {};
+    let saved: { in?: string; out?: string; dev?: number; through?: boolean; realtime?: boolean } = {};
     try {
       saved = JSON.parse(localStorage.getItem(STORE) ?? '{}');
     } catch {}
     if (saved.dev) this.deviceId = saved.dev;
     this.through = !!saved.through;
+    this.realtime = saved.realtime ?? true;
     const ins = [...this.access.inputs.values()];
     const outs = [...this.access.outputs.values()];
     const guess = <T extends MIDIPort>(list: T[]) => list.find((p) => /juno/i.test(p.name ?? '')) ?? list[0];
@@ -61,7 +76,7 @@ export class MidiLink {
     try {
       localStorage.setItem(
         STORE,
-        JSON.stringify({ in: this.input?.id, out: this.output?.id, dev: this.deviceId, through: this.through }),
+        JSON.stringify({ in: this.input?.id, out: this.output?.id, dev: this.deviceId, through: this.through, realtime: this.realtime }),
       );
     } catch {}
   }
@@ -70,6 +85,12 @@ export class MidiLink {
     this.deviceId = id;
     this.save();
   }
+  setRealtime(on: boolean) {
+    this.realtime = on;
+    this.save();
+    this.onState();
+  }
+
   setThrough(on: boolean) {
     this.through = on;
     this.save();
@@ -189,6 +210,8 @@ export class MidiLink {
         await sleep(25);
       }
     }
+    for (const b of blocks) this.dirty.delete(b);
+    this.onDirty();
     progress(msgs.length, msgs.length);
   }
 }

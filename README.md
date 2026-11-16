@@ -57,5 +57,10 @@ one DT1 per entry and ends with an all-zero entry:
 
 GM2 banks are not served by the synth and use names built into the editor.
 
+**Sync in real time** (toolbar, on by default, remembered): every edit is sent as you make it and
+the Sync button is disabled. Off: edits stay in the editor, the status bar counts unsent blocks, and
+Sync sends them. Mode switches and sound selections always go out immediately; turning the toggle
+back on sends any pending edits.
+
 **Mode:** switching PERFORM/PATCH in the editor sets `fm.setup.soundMode` on the synth
 (PERFORM = 1, PATCH = 0, as JUXE.exe does), and Read first reads Setup and follows the synth's mode.
