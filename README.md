@@ -1,8 +1,15 @@
-# JUNO-Di Editor (web)
+# JUNO-Di Live Editor
 
-A TypeScript/Web MIDI re-implementation of Roland's `JUXE.exe` editor. Like the original, it is
-an engine driven by `public/JUXE/Script.xml`: the parameter map, panels, controls and skins
-all come from that file and the BMPs next to it, which are served unchanged.
+**Roland's JUNO-Di editor, rewritten for 2026.** 🎛️
+
+It looks and works like the old JUNO-Di editor, with one big upgrade: **live editing**. Every
+change goes to the synth the moment you make it, just like turning a knob on the panel. Tune
+the sound and hear it at the same time, no more tweak-sync-listen-repeat.
+
+Prefer the classic workflow? It's still here: **Read** the sound from the synth, edit it at your
+leisure, **Sync** it back and **Write** it to memory.
+
+## Getting started
 
 ```bash
 npm install
