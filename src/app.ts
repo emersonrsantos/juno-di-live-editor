@@ -42,10 +42,16 @@ export class App implements Env {
     const modelId = childText(out, 'modelID')!.split(/\s+/).map((b) => parseInt(b, 16));
     const roots = childrenOf(out, 'rootStruct').map((r) => r.text);
     this.midi = new MidiLink(this.model, modelId, roots);
-    this.names.onUpdate = () => this.invalidate();
+    this.names.onUpdate = () => {
+      this.invalidate();
+      this.refreshMenu();
+    };
+    this.names.waves.onUpdate = this.names.onUpdate;
+    this.names.waves.fetch = (first, count) => this.fetchWaveNames(first, count);
     // a (re)connected synth may hold different user names: fetch them again
     this.midi.onPortChange = () => {
       this.names.invalidate();
+      if (this.midi.output) void this.names.waves.prefetch();
       this.status(
         this.midi.output
           ? `Connected to ${this.midi.output.name}.`
@@ -59,7 +65,6 @@ export class App implements Env {
       this.invalidate();
     };
     this.names.onNeed = (bank) => this.fetchNames(bank);
-    this.names.onNeedWaves = (first, count) => this.fetchWaveNames(first, count);
     this.model.onChange((b, off, _l, src) => {
       if (src === 'ui' && b.root === 'fm') this.onTypeChange(b.path, off);
       if (src !== 'internal' && !this.vsScheduled) {
@@ -135,8 +140,22 @@ export class App implements Env {
     this.midi.note(on, ks('channel'), note, ks('velocity') || 100);
   }
 
-  openMenu(ctl: Control, items: MenuItem[], onPick: (v: number) => void) {
+  /** Updates the open menu's labels (e.g. wave names still arriving); undefined when none is open. */
+  private menuRefresh?: () => void;
+  private menuRefreshQueued = false;
+
+  private refreshMenu() {
+    if (!this.menuRefresh || this.menuRefreshQueued) return;
+    this.menuRefreshQueued = true;
+    requestAnimationFrame(() => {
+      this.menuRefreshQueued = false;
+      this.menuRefresh?.();
+    });
+  }
+
+  openMenu(ctl: Control, items: MenuItem[], onPick: (v: number) => void, refresh?: () => MenuItem[]) {
     closeOverlays();
+    this.menuRefresh = undefined;
     const r = this.screenRect(ctl, { x: ctl.ax, y: ctl.ay, w: ctl.w, h: ctl.h });
     const menu = document.createElement('div');
     menu.className = 'jx-menu';
@@ -162,6 +181,15 @@ export class App implements Env {
     menu.style.top = `${top}px`;
     menu.style.minWidth = `${r.w}px`;
     menu.querySelector('.selected')?.scrollIntoView({ block: 'center' });
+    if (refresh) {
+      const els = [...menu.children] as HTMLElement[];
+      this.menuRefresh = () => {
+        if (!menu.isConnected) return void (this.menuRefresh = undefined);
+        refresh().forEach((it, i) => {
+          if (els[i] && els[i].textContent !== it.label) els[i].textContent = it.label;
+        });
+      };
+    }
     setTimeout(() => document.addEventListener('pointerdown', outside, { once: true }), 0);
     const outside = (e: Event) => {
       if (!menu.contains(e.target as Node)) {
@@ -355,30 +383,27 @@ export class App implements Env {
    * [first wave as 3 nibbles, count] streams DT1 [wave number as 4 nibbles, name×12].
    * (waveANameInformation, 0F 00 01 01, streams all 850 waves but takes ~17 s.)
    */
-  private async fetchWaveNames(first: number, count: number): Promise<number> {
-    if (!this.midi.output) return -1;
+  private async fetchWaveNames(first: number, count: number): Promise<[number, string][] | null> {
+    if (!this.midi.output) return null;
     const address = this.v('cm.command.waveANameInformation2')!.address;
     try {
       const arg = [(first >> 8) & 15, (first >> 4) & 15, first & 15, count];
       const rows = await this.midi.exclusive(() => this.midi.query(address, arg, 1500));
-      let got = 0;
-      for (const d of rows) {
-        const n = ((d[0] & 15) << 12) | ((d[1] & 15) << 8) | ((d[2] & 15) << 4) | (d[3] & 15);
-        if (n < first || n >= first + count) continue;
-        this.names.waves[n - 1] = String.fromCharCode(...d.slice(4, 16)).trim();
-        got++;
-      }
-      this.invalidate();
-      return got;
+      // only the synth's end marker means "no more waves"; silence means try again later
+      if (!rows.length) return this.midi.lastQueryEnded ? [] : null;
+      return rows.map((d) => [
+        ((d[0] & 15) << 12) | ((d[1] & 15) << 8) | ((d[2] & 15) << 4) | (d[3] & 15),
+        String.fromCharCode(...d.slice(4, 16)).trim(),
+      ]);
     } catch {
-      return -1;
+      return null;
     }
   }
 
   async connectMidi() {
     try {
+      // selecting a port fires onPortChange, which resets names and starts the wave prefetch
       await this.midi.init();
-      this.names.invalidate();
       this.invalidate();
     } catch (e) {
       this.status(String((e as Error).message ?? e));

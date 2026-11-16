@@ -17,7 +17,8 @@ export interface Env {
   invalidate(): void;
   callFunction(name: string, ctl: Control): void;
   functionEnabled(name: string): boolean;
-  openMenu(ctl: Control, items: MenuItem[], onPick: (value: number) => void): void;
+  /** `refresh` rebuilds the items while the menu is open (labels that load asynchronously). */
+  openMenu(ctl: Control, items: MenuItem[], onPick: (value: number) => void, refresh?: () => MenuItem[]): void;
   openEdit(ctl: Control, rect: Rect, value: string, maxLen: number, onDone: (v: string) => void): void;
   status(text: string): void;
   note(on: boolean, note: number): void;
@@ -584,7 +585,7 @@ class Combo extends Control {
     if (!v) return;
     this.pressed = true;
     this.env.invalidate();
-    this.env.openMenu(this, this.items(v), (x) => this.pick(x));
+    this.env.openMenu(this, this.items(v), (x) => this.pick(x), () => this.items(v));
   }
   pick(x: number) {
     this.setVal(x);
@@ -618,21 +619,22 @@ class MfxSelectCombo extends Combo {
 }
 
 class WaveSelectCombo extends Combo {
+  private label(x: number, name: string | undefined) {
+    return x === 0 ? '---- : OFF' : `${String(x).padStart(4, '0')}: ${name ?? ''}`;
+  }
   text() {
     const v = this.ref();
     if (!v) return '';
     const x = this.m.get(v);
-    if (x === 0) return '---- : OFF';
-    return `${String(x).padStart(4, '0')}: ${this.env.names.waveName(x) ?? ''}`;
+    return this.label(x, this.env.names.waves.get(x));
   }
   items(v: ValueNode): MenuItem[] {
+    const waves = this.env.names.waves;
+    void waves.prefetch(); // normally already running since connect; names fill in live
     const cur = this.m.get(v);
-    const out: MenuItem[] = [{ label: '---- : OFF', value: 0, selected: cur === 0 }];
-    void this.env.names.loadAllWaves(); // fills in names in the background while the menu is open
-    // JUNO-Di has 850 internal waves; names still loading show as numbers only
-    const n = Math.min(v.max, Math.max(this.env.names.waves.length, 850));
-    for (let x = 1; x <= n; x++)
-      out.push({ label: `${String(x).padStart(4, '0')}: ${this.env.names.waves[x - 1] ?? ''}`, value: x, selected: x === cur });
+    const out: MenuItem[] = [{ label: this.label(0, undefined), value: 0, selected: cur === 0 }];
+    for (let x = 1; x <= Math.min(v.max, waves.count); x++)
+      out.push({ label: this.label(x, waves.peek(x)), value: x, selected: x === cur });
     return out;
   }
 }
