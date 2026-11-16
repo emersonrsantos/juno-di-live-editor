@@ -49,6 +49,7 @@ export class App implements Env {
       this.invalidate();
     };
     this.names.onNeed = (bank) => this.fetchNames(bank);
+    this.names.onNeedWaves = (first, count) => this.fetchWaveNames(first, count);
     this.model.onChange((b, off, _l, src) => {
       if (src === 'ui' && b.root === 'fm') this.onTypeChange(b.path, off);
       if (src !== 'internal' && !this.vsScheduled) {
@@ -336,6 +337,31 @@ export class App implements Env {
       });
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Wave names: RQ1 cm.command.waveANameInformation2 (0F 00 01 02) with size =
+   * [first wave as 3 nibbles, count] streams DT1 [wave number as 4 nibbles, name×12].
+   * (waveANameInformation, 0F 00 01 01, streams all 850 waves but takes ~17 s.)
+   */
+  private async fetchWaveNames(first: number, count: number): Promise<number> {
+    if (!this.midi.output) return -1;
+    const address = this.v('cm.command.waveANameInformation2')!.address;
+    try {
+      const arg = [(first >> 8) & 15, (first >> 4) & 15, first & 15, count];
+      const rows = await this.midi.exclusive(() => this.midi.query(address, arg, 1500));
+      let got = 0;
+      for (const d of rows) {
+        const n = ((d[0] & 15) << 12) | ((d[1] & 15) << 8) | ((d[2] & 15) << 4) | (d[3] & 15);
+        if (n < first || n >= first + count) continue;
+        this.names.waves[n - 1] = String.fromCharCode(...d.slice(4, 16)).trim();
+        got++;
+      }
+      this.invalidate();
+      return got;
+    } catch {
+      return -1;
     }
   }
 

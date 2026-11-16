@@ -623,13 +623,14 @@ class WaveSelectCombo extends Combo {
     if (!v) return '';
     const x = this.m.get(v);
     if (x === 0) return '---- : OFF';
-    const name = this.env.names.waves[x - 1];
-    return `${String(x).padStart(4, '0')}: ${name ?? ''}`;
+    return `${String(x).padStart(4, '0')}: ${this.env.names.waveName(x) ?? ''}`;
   }
   items(v: ValueNode): MenuItem[] {
     const cur = this.m.get(v);
     const out: MenuItem[] = [{ label: '---- : OFF', value: 0, selected: cur === 0 }];
-    const n = Math.min(v.max, this.env.names.waves.length || v.max);
+    void this.env.names.loadAllWaves(); // fills in names in the background while the menu is open
+    // JUNO-Di has 850 internal waves; names still loading show as numbers only
+    const n = Math.min(v.max, Math.max(this.env.names.waves.length, 850));
     for (let x = 1; x <= n; x++)
       out.push({ label: `${String(x).padStart(4, '0')}: ${this.env.names.waves[x - 1] ?? ''}`, value: x, selected: x === cur });
     return out;

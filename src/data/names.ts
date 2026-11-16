@@ -66,6 +66,11 @@ export class NameTables {
   /** Names received from the device keyed by "msb:lsb:pc". */
   private deviceNames = new Map<string, string>();
   private requested = new Set<string>();
+  /** Wave names are fetched in blocks of WAVE_CHUNK, on demand (the full list takes ~17 s). */
+  static readonly WAVE_CHUNK = 32;
+  private waveChunks = new Set<number>();
+  /** Fetch wave names [first, first+count); resolves to the number of names received. */
+  onNeedWaves: (first: number, count: number) => Promise<number> = async () => 0;
   /** Called the first time a device-backed bank is shown; the app fetches it over MIDI. */
   onNeed: (bank: Bank) => Promise<boolean> = async () => false;
   onUpdate: () => void = () => {};
@@ -74,8 +79,35 @@ export class NameTables {
     this.deviceNames.set(`${msb}:${lsb}:${pc}`, name);
   }
 
+  /** Wave name for a 1-based wave number; unknown names are requested in the background. */
+  waveName(n: number): string | undefined {
+    const name = this.waves[n - 1];
+    if (name === undefined && n > 0) this.requestWaveChunk(Math.floor((n - 1) / NameTables.WAVE_CHUNK));
+    return name;
+  }
+
+  private requestWaveChunk(chunk: number): Promise<number> {
+    if (this.waveChunks.has(chunk)) return Promise.resolve(-1);
+    this.waveChunks.add(chunk);
+    return this.onNeedWaves(chunk * NameTables.WAVE_CHUNK + 1, NameTables.WAVE_CHUNK).then((got) => {
+      if (got <= 0) this.waveChunks.delete(chunk); // nothing yet (no MIDI) or past the end
+      this.onUpdate();
+      return got;
+    });
+  }
+
+  /** Load the whole wave list block by block (for the wave dropdown), stopping at the end. */
+  async loadAllWaves() {
+    for (let c = 0; c < 1024; c++) {
+      if (this.waveChunks.has(c)) continue;
+      const got = await this.requestWaveChunk(c);
+      if (got === 0) break;
+    }
+  }
+
   /** Forget fetched names so they are requested again (e.g. after connecting a synth). */
   invalidate(msb?: number, lsb?: number) {
+    if (msb === undefined) this.waveChunks.clear();
     for (const k of [...this.requested]) if (msb === undefined || k === `${msb}:${lsb}`) this.requested.delete(k);
   }
 

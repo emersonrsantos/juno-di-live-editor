@@ -57,6 +57,12 @@ one DT1 per entry and ends with an all-zero entry:
 
 GM2 banks are not served by the synth and use names built into the editor.
 
+**Wave names** (WG section): RQ1 `0F 00 01 02` (`waveANameInformation2`) with size =
+`[first wave as 3 nibbles, count]` returns DT1 `[wave number as 4 nibbles, name×12]` in ~60 ms for
+a few waves. The editor fetches names in blocks of 32 as they are displayed and loads the rest of
+the 850 in the background when the wave dropdown is opened (`0F 00 01 01` streams all of them but
+takes ~17 s).
+
 **Sync in real time** (toolbar, on by default, remembered): every edit is sent as you make it and
 the Sync button is disabled. Off: edits stay in the editor, the status bar counts unsent blocks, and
 Sync sends them. Mode switches and sound selections always go out immediately; turning the toggle
