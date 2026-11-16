@@ -10,7 +10,6 @@
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 12px/1.4 system-ui, Segoe UI, Arial, sans-serif; }
 body { display: flex; flex-direction: column; }
 #toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 6px 10px; background: var(--bar); border-bottom: 1px solid #000; }
-#toolbar .brand { font-weight: 600; margin-right: 6px; }
 #toolbar .sep { width: 1px; height: 18px; background: #444; }
 #toolbar button, #toolbar select { background: #33363d; color: var(--fg); border: 1px solid #4a4e57; border-radius: 3px; padding: 2px 8px; font: inherit; }
 #toolbar button:hover { background: #3d4149; }

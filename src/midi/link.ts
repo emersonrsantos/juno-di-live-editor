@@ -57,7 +57,11 @@ export class MidiLink {
   async init() {
     if (!this.supported) throw new Error('Web MIDI is not available in this browser (use Chrome or Edge).');
     this.access = await navigator.requestMIDIAccess({ sysex: true });
-    this.access.onstatechange = () => this.onState();
+    // ports come and go (synth switched on/off, USB replugged): follow them
+    this.access.onstatechange = () => {
+      this.autoSelect();
+      this.onState();
+    };
     let saved: { in?: string; out?: string; dev?: number; through?: boolean; realtime?: boolean } = {};
     try {
       saved = JSON.parse(localStorage.getItem(STORE) ?? '{}');
@@ -65,11 +69,36 @@ export class MidiLink {
     if (saved.dev) this.deviceId = saved.dev;
     this.through = !!saved.through;
     this.realtime = saved.realtime ?? true;
-    const ins = [...this.access.inputs.values()];
-    const outs = [...this.access.outputs.values()];
-    const guess = <T extends MIDIPort>(list: T[]) => list.find((p) => /juno/i.test(p.name ?? '')) ?? list[0];
-    this.selectInput(ins.find((p) => p.id === saved.in) ?? guess(ins));
-    this.selectOutput(outs.find((p) => p.id === saved.out) ?? guess(outs));
+    this.autoSelect();
+    this.onState();
+  }
+
+  /** Called when the selected output changes because a device appeared or disappeared. */
+  onPortChange: () => void = () => {};
+
+  /**
+   * Keep the selection on live ports: drop a port that disconnected, and pick up a JUNO
+   * port (or the last one the user chose) when it appears.
+   */
+  private autoSelect() {
+    const a = this.access;
+    if (!a) return;
+    let saved: { in?: string; out?: string } = {};
+    try {
+      saved = JSON.parse(localStorage.getItem(STORE) ?? '{}');
+    } catch {}
+    const live = <T extends MIDIPort>(m: Map<string, T> | ReadonlyMap<string, T>) => [...m.values()].filter((p) => p.state === 'connected');
+    const pick = <T extends MIDIPort>(list: T[], current: T | undefined, savedId?: string) =>
+      current && current.state === 'connected'
+        ? current
+        : list.find((p) => p.id === savedId) ?? list.find((p) => /juno/i.test(p.name ?? ''));
+    const inp = pick(live(a.inputs), this.input, saved.in);
+    const out = pick(live(a.outputs), this.output, saved.out);
+    if (inp !== this.input) this.selectInput(inp, false);
+    if (out !== this.output) {
+      this.selectOutput(out, false);
+      this.onPortChange();
+    }
   }
 
   private save() {
@@ -96,17 +125,18 @@ export class MidiLink {
     this.save();
   }
 
-  selectInput(p: MIDIInput | undefined) {
+  /** `remember` = false for automatic changes, so an unplugged synth isn't forgotten. */
+  selectInput(p: MIDIInput | undefined, remember = true) {
     if (this.input) this.input.onmidimessage = null;
     this.input = p;
     if (p) p.onmidimessage = (e) => this.receive(e.data!);
-    this.save();
+    if (remember) this.save();
     this.onState();
   }
 
-  selectOutput(p: MIDIOutput | undefined) {
+  selectOutput(p: MIDIOutput | undefined, remember = true) {
     this.output = p;
-    this.save();
+    if (remember) this.save();
     this.onState();
   }
 

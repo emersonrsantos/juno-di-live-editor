@@ -43,6 +43,12 @@ export class App implements Env {
     const roots = childrenOf(out, 'rootStruct').map((r) => r.text);
     this.midi = new MidiLink(this.model, modelId, roots);
     this.names.onUpdate = () => this.invalidate();
+    // a (re)connected synth may hold different user names: fetch them again
+    this.midi.onPortChange = () => {
+      this.names.invalidate();
+      if (this.midi.output) this.status(`Connected to ${this.midi.output.name}.`);
+      this.invalidate();
+    };
     this.midi.onDirty = () => {
       const n = this.midi.dirty.size;
       if (n && !this.midi.realtime) this.status(`${n} edited block${n > 1 ? 's' : ''} not sent yet — press Sync to send to the JUNO-Di.`);

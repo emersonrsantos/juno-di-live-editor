@@ -66,12 +66,22 @@ function bindToolbar(app: App) {
   outSel.onchange = () => app.midi.selectOutput(app.midi.access?.outputs.get(outSel.value));
   dev.onchange = () => app.midi.setDeviceId(parseInt(dev.value, 10));
   thru.onchange = () => app.midi.setThrough(thru.checked);
-  $('btn-midi').onclick = async () => {
+  // MIDI connects automatically (the desktop app grants access without a prompt). The
+  // button only appears if access failed, e.g. in a browser where the user blocked it.
+  const btn = $<HTMLButtonElement>('btn-midi');
+  const connect = async () => {
     await app.connectMidi();
+    btn.hidden = !!app.midi.access;
     refresh();
   };
+  btn.onclick = connect;
   refresh();
-  if (!app.midi.supported) $('btn-midi').setAttribute('disabled', '');
+  if (app.midi.supported) void connect();
+  else {
+    btn.hidden = false;
+    btn.disabled = true;
+    btn.title = 'Web MIDI is not available here';
+  }
 }
 
 boot();
