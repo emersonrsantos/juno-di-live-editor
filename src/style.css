@@ -1,0 +1,40 @@
+:root {
+  --bg: #0f1013;
+  --bar: #23252b;
+  --fg: #d7dae0;
+  --muted: #8a8f99;
+  --accent: #4fb3ff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 12px/1.4 system-ui, Segoe UI, Arial, sans-serif; }
+body { display: flex; flex-direction: column; }
+#toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 6px 10px; background: var(--bar); border-bottom: 1px solid #000; }
+#toolbar .brand { font-weight: 600; margin-right: 6px; }
+#toolbar .sep { width: 1px; height: 18px; background: #444; }
+#toolbar button, #toolbar select { background: #33363d; color: var(--fg); border: 1px solid #4a4e57; border-radius: 3px; padding: 2px 8px; font: inherit; }
+#toolbar button:hover { background: #3d4149; }
+#toolbar button:disabled { opacity: 0.5; }
+#toolbar select { max-width: 180px; }
+.pill { padding: 1px 6px; border-radius: 8px; background: #33363d; color: var(--muted); }
+#desk { position: relative; flex: 1; overflow: auto; padding: 0; }
+#loading { padding: 24px; color: var(--muted); }
+.jx-window canvas { display: block; }
+.jx-main { position: relative; display: inline-block; }
+.jx-floating { position: absolute; z-index: 10; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6); border: 1px solid #000; }
+.jx-titlebar { display: flex; justify-content: space-between; align-items: center; height: 20px; padding: 0 2px 0 8px; background: #2c3e57; font-size: 11px; cursor: move; user-select: none; }
+.jx-close { background: none; border: 0; color: var(--fg); font-size: 15px; line-height: 1; cursor: pointer; padding: 0 6px; }
+.jx-close:hover { color: #fff; background: #c33; }
+#status { height: 22px; padding: 3px 10px; background: var(--bar); border-top: 1px solid #000; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jx-menu { position: fixed; z-index: 100; max-height: 70vh; overflow: auto; background: #111; border: 1px solid #4a6a90; box-shadow: 0 6px 20px rgba(0,0,0,.6); font: 11px Arial, sans-serif; column-gap: 0; }
+.jx-menu-item { padding: 1px 10px 1px 6px; color: #9fd0ff; white-space: nowrap; cursor: default; break-inside: avoid; }
+.jx-menu-item:hover { background: #2b5d94; color: #fff; }
+.jx-menu-item.selected { background: #1d3f66; color: #fff; }
+.jx-edit { position: fixed; z-index: 100; background: #000; color: #9fd0ff; border: 1px solid var(--accent); font: 14px Arial, sans-serif; padding: 0 4px; outline: none; }
+.jx-modal { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; }
+.jx-dialog { width: min(420px, calc(100vw - 32px)); background: #23252b; border: 1px solid #4a6a90; border-radius: 6px; padding: 16px 18px; box-shadow: 0 12px 40px rgba(0,0,0,.6); }
+.jx-dialog h3 { margin: 0 0 8px; font-size: 14px; }
+.jx-dialog p { margin: 0 0 16px; color: var(--muted); }
+.jx-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.jx-actions button { background: #33363d; color: var(--fg); border: 1px solid #4a4e57; border-radius: 3px; padding: 4px 14px; font: inherit; cursor: pointer; }
+.jx-actions button.primary { background: #a33; border-color: #c55; color: #fff; }

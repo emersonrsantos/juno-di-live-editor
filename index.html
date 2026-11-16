@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JUNO-Di Editor</title>
+  </head>
+  <body>
+    <header id="toolbar">
+      <span class="brand">JUNO-Di Editor</span>
+      <button id="btn-new" title="Reset to InitialData.jxe">New</button>
+      <button id="btn-open" title="Open a .jxe file">Open…</button>
+      <button id="btn-save" title="Save as .jxe">Save</button>
+      <input id="file-input" type="file" accept=".jxe" hidden />
+      <span class="sep"></span>
+      <button id="btn-midi" title="Request MIDI access (SysEx)">Connect MIDI</button>
+      <label>In <select id="midi-in"></select></label>
+      <label>Out <select id="midi-out"></select></label>
+      <label>Device ID <select id="device-id"></select></label>
+      <label title="Forward notes/controllers from MIDI In to MIDI Out"><input id="midi-thru" type="checkbox" /> Thru</label>
+      <span id="midi-state" class="pill">off</span>
+      <span class="sep"></span>
+      <label>Zoom
+        <select id="zoom">
+          <option value="1">100%</option>
+          <option value="1.25">125%</option>
+          <option value="1.5">150%</option>
+          <option value="2">200%</option>
+        </select>
+      </label>
+    </header>
+    <main id="desk"><div id="loading">Loading…</div></main>
+    <footer id="status"></footer>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
